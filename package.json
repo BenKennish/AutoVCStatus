@@ -1,0 +1,13 @@
+{
+  "name": "auto-vc-status",
+  "version": "1.0.0",
+  "description": "Sets Discord voice channel statuses to the most popular activity of those in the channel",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "discord.js": "^14.8.0",
+    "undici": "^6.0.0"
+  }
+}
