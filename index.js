@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, PermissionFlagsBits, ClientPresence } = require('discord.js');
 const { fetch } = require('undici');
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
@@ -112,41 +112,11 @@ function decideChannelStatus(activities, memberCount)
 // Helper: Set channel status (topic)
 async function setChannelStatus(channel, status)
 {
-    try
-    {
-        console.log(`[setChannelStatus] Attempting to set status for channel ${channel.name} (${channel.id}) to: "${status}"`);
+    //console.debug(`client`, client);
+    const res = await client.rest.put(`/channels/${channel.id}/voice-status`, { body: { status: status } });
+    console.log(`[setChannelStatus] REST call returned: `, res);
 
-        if (typeof channel.setVoiceChannelStatus === 'function')
-        {
-            await channel.setVoiceChannelStatus(status)
-                .then(() => console.log(`[setChannelStatus] Used setVoiceChannelStatus successfully.`))
-                .catch(err => console.error(`[setChannelStatus] setVoiceChannelStatus error:`, err));
-            return;
-        }
-
-        if (typeof channel.setStatus === 'function')
-        {
-            await channel.setStatus(status)
-                .then(() => console.log(`[setChannelStatus] Used setStatus successfully.`))
-                .catch(err => console.error(`[setChannelStatus] setStatus error:`, err));
-            return;
-        }
-
-        if (typeof channel.setTopic === 'function')
-        {
-            await channel.setTopic(status)
-                .then(() => console.log(`[setChannelStatus] Used setTopic successfully.`))
-                .catch(err => console.error(`[setChannelStatus] setTopic error:`, err));
-            return;
-        }
-
-        console.warn(`[setChannelStatus] No suitable method found on channel object.  Falling back to REST`);
-    }
-    catch (err)
-    {
-        console.error(`[setChannelStatus] Exception in library call:`, err);
-    }
-
+    /*
     const url = `${DISCORD_API_BASE}/channels/${channel.id}/voice-status`;
     const res = await fetch(url, {
         method: 'PUT',
@@ -157,6 +127,9 @@ async function setChannelStatus(channel, status)
         body: JSON.stringify({ status: status })
     });
     console.log(`[setChannelStatus] REST PATCH response status: ${res.status}`);
+    */
+
+
 
 }
 
