@@ -1,4 +1,4 @@
-# auto-vc-status
+# AutoVCStatus
 
 A Discord bot that automatically sets the status of voice channels on a server according to the game activity of the channel members
 
