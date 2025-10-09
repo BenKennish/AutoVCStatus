@@ -1,22 +1,42 @@
+// ==============
+//  AutoVCStatus
+// ==============
+//
+// A Discord bot that automatically sets the status of voice channels on a
+// server according to the game activity of the channel members
+//
+
 const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
-//const { fetch } = require('undici');
 
-const DISCORD_API_BASE = 'https://discord.com/api/v10';
+const { version } = require('./package.json');
 
-// Suppress all console.debug output
-//console.debug = () => { };
+// set to false to disable debug messsages
+const DEBUG = false;
 
-// DISCORD_TOKEN environment variable needs to contain the Discord bot API key
-const TOKEN = process.env.DISCORD_TOKEN;
-
+// Discord's ID for 'playing' activities (i.e. games)
 const ID_GAME = 0;
 
-// .. so you could run this bot like this:
-// > DISCORD_TOKEN="your_discord_token_here" node index.js
+// The AVS_BOT_TOKEN environment variable needs to contain the Discord bot API key
+// You could run this bot like this:
+//     AVS_BOT_TOKEN="your_discord_token_here" node index.js
+// Or maybe store it in a (properly protected) file and then run this:
+//   AVS_BOT_TOKEN="$(cat token.secret)" node index.js
+const AVS_BOT_TOKEN = process.env.AVS_BOT_TOKEN;
 
-if (!TOKEN)
+
+// ===================================================
+// ===================================================
+
+
+// Suppress all console.debug output (comment out )
+if (!DEBUG)
 {
-    console.error('Set DISCORD_TOKEN environment variable and restart.');
+    console.debug = () => { };
+}
+
+if (!AVS_BOT_TOKEN)
+{
+    console.error('Set AVS_BOT_TOKEN environment variable and restart.');
     process.exit(1);
 }
 
@@ -29,16 +49,16 @@ const client = new Client({
     ]
 });
 
-// used for console output
+// used for pretty console output
 const colours = {
-    user: "\x1b[36m",
-    activity: "\x1b[32m",
-    channel: "\x1b[33m",
+    user: "\x1b[31m",     // red
+    activity: "\x1b[32m", // green
+    channel: "\x1b[94m",  // bright blue
     reset: "\x1b[0m"
 };
 
 
-// Helper: Get activities for all members in a voice channel
+// Get activities for all members in a voice channel
 function getChannelActivities(channel)
 {
     const members = channel.members.filter(m => !m.user.bot);
@@ -54,7 +74,8 @@ function getChannelActivities(channel)
             {
                 if (act.type === ID_GAME && act.name)
                 {
-                    // type ID_GAME: "Playing" activities (i.e. games)
+                    // type 0 (ID_GAME): "Playing" activities (i.e. games)
+                    // type 2: "Listening to" activities (Music)
                     activities.push({
                         user: member.user,
                         game: act.name
@@ -73,58 +94,62 @@ function getChannelActivities(channel)
 }
 
 
-// Helper: Decide channel status string
+// Decide channel status string
 function decideChannelStatus(activities, memberCount)
 {
     console.debug(`[decideChannelStatus] memberCount=${memberCount}, activities=${JSON.stringify(activities)}`);
 
     if (activities.length === 0)
     {
-        console.log(`[decideChannelStatus] No activities found.`);
+        //console.log(`[decideChannelStatus] No activities found.`);
         return '';
     }
 
+    // in the specific case of 1 member, we can optimise...
     if (memberCount === 1)
     {
         const status = activities[0]?.game || '';
-        //console.log(`[decideChannelStatus] Only one member, status: ${colours.activity}${status}${colours.reset}`);
         return status;
     }
 
-    // Count games
+    // activities is an array of objects like this...
+    // [
+    //   { user: "April", game: "Minecraft" },
+    //   { user: "Ben", game: "Fortnite" },
+    //   { user: "Christine", game: "Fortnite" }
+    // ]
+
+    // FIXME: this all seems very fussy and probably could be done in fewer steps and more efficiently
+
+    // Count games, using game name as a property (kinda like a Map)
     const gameCounts = {};
     activities.forEach(activity =>
     {
         gameCounts[activity.game] = (gameCounts[activity.game] || 0) + 1;
     });
-    console.log(`[decideChannelStatus] Game counts:`, gameCounts);
+    console.log(`[decideChannelStatus] gameCounts:`, gameCounts);
 
-    // gameCounts is an object which maps game name to a number of players
+    // now we build an array like this
+    // [ { game: "Fortnite", numPlayers: 2 }, { game: "Minecraft", numPlayers: 1 }]
+    const games = [];
 
-    // Find most common game
-    let maxCount = 0, maxGame = null;
-    Object.entries(gameCounts).forEach(([game, count]) =>
+    Object.keys(gameCounts).forEach(game =>
     {
-        if (count > maxCount)
-        {
-            maxCount = count;
-            maxGame = game;
-        }
+        games.push({ name: game, numPlayers: gameCounts[game] });
     });
 
-    // TODO: store this data in a sortable way so we can optionally display all played games like...
-    // "Minecraft (3), Guild Wars 2 (2), Fortnite (1)"
+    // sort in descending order of players
+    games.sort((a, b) => { b.numPlayers - a.numPlayers });
 
-    if (maxCount >= 2)
-    {
-        console.log(`[decideChannelStatus] Most common game: ${colours.activity}${maxGame}${colours.reset} (${maxCount} users)`);
-        return maxGame;
-    }
+    console.log(`[decideChannelStatus] games:`, games);
 
-    // Otherwise, list all games
-    const status = Object.keys(gameCounts).join(', ');
-    console.log(`[decideChannelStatus] No common game, status: ${status}`);
+    const status = games.map((game) => { `${game.name} (${game.numPlayers})` }).join(', ');
+    // status will now be in the form of
+    // "Fortnite (2), Minecraft (1)"
+
+    console.log(`[decideChannelStatus] Status: ${status}`);
     return status;
+
 }
 
 
@@ -142,6 +167,9 @@ async function setChannelStatus(channel, status)
     }
 
     // this is how we would do it using a raw(ish) REST request
+    // requires these lines at the top
+    // const { fetch } = require('undici');
+    // const DISCORD_API_BASE = 'https://discord.com/api/v10';
     /*
     const url = `${DISCORD_API_BASE}/channels/${channel.id}/voice-status`;
     const res = await fetch(url, {
@@ -279,15 +307,15 @@ client.on('presenceUpdate', async (oldPresence, newPresence) =>
 
 client.once('clientReady', () =>
 {
-    console.log(`------------------------`);
-    console.log(`AutoVCStatus Discord Bot`);
-    console.log(`------------------------`);
+    console.log(`--------------------`);
+    console.log(`AutoVCStatus v${version}`);
+    console.log(`--------------------`);
     console.log('');
     console.log(`Logged in as ${client.user.tag}`);
     console.log('Bot is ready and listening for events.');
 });
 
-client.login(TOKEN)
+client.login(AVS_BOT_TOKEN)
     .catch(err =>
     {
         console.error('Failed to login:', err);

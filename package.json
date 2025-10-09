@@ -1,12 +1,17 @@
 {
   "name": "auto-vc-status",
   "version": "1.0.0",
-  "description": "Sets Discord voice channel statuses to the most popular activity of those in the channel",
+  "description": "Automatically sets the status of Discord voice channels according to the game activity of the channel members",
+  "author": "Ben Kennish <ben@kennish.net> (https://www.bennish.net)",
   "main": "index.js",
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "discord.js": "^14.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BenKennish/AutoVCStatus"
   }
 }
