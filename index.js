@@ -68,7 +68,7 @@ function getChannelActivities(channel)
     {
         if (member.presence && member.presence.activities)
         {
-            console.debug(`activities set for user ${member.user}:`, member.presence.activities);
+            console.debug(`activities set for user ${member.user.tag}:`, member.presence.activities);
 
             member.presence.activities.forEach(act =>
             {
