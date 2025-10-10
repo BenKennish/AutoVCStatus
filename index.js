@@ -11,7 +11,7 @@ const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
 const { version } = require('./package.json');
 
 // set to false to disable debug messsages
-const DEBUG = false;
+const DEBUG = true;
 
 // Discord's ID for 'playing' activities (i.e. games)
 const ID_GAME = 0;
@@ -101,7 +101,6 @@ function decideChannelStatus(activities, memberCount)
 
     if (activities.length === 0)
     {
-        //console.log(`[decideChannelStatus] No activities found.`);
         return '';
     }
 
@@ -112,15 +111,17 @@ function decideChannelStatus(activities, memberCount)
         return status;
     }
 
-    // activities is an array of objects like this...
+    // activities is an array of objects from getChannelActivities()
+    // and will look something like this...
     // [
-    //   { user: "April", game: "Minecraft" },
-    //   { user: "Ben", game: "Fortnite" },
+    //   { user: "April", game: "Fortnite" },
+    //   { user: "Ben", game: "Minecraft" },
     //   { user: "Christine", game: "Fortnite" }
     // ]
 
-    // FIXME: this all seems very fussy and probably could be done in fewer steps and more efficiently
 
+    /* ==== OLD WAY
+    //
     // Count games, using game name as a property (kinda like a Map)
     const gameCounts = {};
     activities.forEach(activity =>
@@ -143,17 +144,51 @@ function decideChannelStatus(activities, memberCount)
 
     console.log(`[decideChannelStatus] games:`, games);
 
-    const status = games.map((game) => { `${game.name} (${game.numPlayers})` }).join(', ');
+    const status = games.map((game) => `${game.name} (${game.numPlayers})`).join(', ');
     // status will now be in the form of
     // "Fortnite (2), Minecraft (1)"
+    */
+
+
+    // plain object with no prototype so keys can't collide with Object.prototype
+    // we'll then be adding properties..
+    //   name: game name
+    //   value: number of players
+    const counts = Object.create(null);
+
+    // tally game counts
+    for (const activity of activities)
+    {
+        // skip items without a 'game' property (null/undefined)
+        const game = activity && activity.game;
+        if (!game)
+        {
+            continue;
+        }
+
+        // counts[game] = 1 where game = "Fortnite", is like setting counts.Fortnite = 1;
+        counts[game] = (counts[game] || 0) + 1;
+    }
+
+    // Convert the counts object into an array of { game, count } and sort by count desc
+    const gameCountsSorted = Object.keys(counts)
+        .map((game) =>
+        {
+            // { game } is a shortcut for { game: game }
+            return { game, count: counts[game] };
+        })
+        .sort((a, b) => (b.count - a.count) || a.game.localeCompare(b.game));
+
+    const status = gameCountsSorted
+        .map(game => `${game.name} [${game.numPlayers}]`)
+        .join(', ');
 
     console.log(`[decideChannelStatus] Status: ${status}`);
     return status;
-
 }
 
 
-// Helper: Set channel status (topic)
+// Set channel status (topic)
 async function setChannelStatus(channel, status)
 {
     try
@@ -166,16 +201,16 @@ async function setChannelStatus(channel, status)
         console.error(`[setChannelStatus] REST call errored: `, err);
     }
 
-    // this is how we would do it using a raw(ish) REST request
+    // this is how we could do it using a raw(ish) REST request
     // requires these lines at the top
-    // const { fetch } = require('undici');
-    // const DISCORD_API_BASE = 'https://discord.com/api/v10';
+    //   const { fetch } = require('undici');
+    //   const DISCORD_API_BASE = 'https://discord.com/api/v10';
     /*
     const url = `${DISCORD_API_BASE}/channels/${channel.id}/voice-status`;
     const res = await fetch(url, {
         method: 'PUT',
         headers: {
-            'Authorization': `Bot ${TOKEN}`,
+            'Authorization': `Bot ${AVS_BOT_TOKEN}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ status: status })
@@ -200,6 +235,7 @@ async function updateVoiceChannelStatus(channel)
     if (members.size === 0)
     {
         // Discord automatically clears an empty vc's status
+        //await setChannelStatus(channel, "");
         return;
     }
     const activities = getChannelActivities(channel);
@@ -212,14 +248,17 @@ async function updateVoiceChannelStatus(channel)
 // Listen for voice state updates
 client.on('voiceStateUpdate', async (oldState, newState) =>
 {
-    // Ignore stage channels
     const oldChannel = oldState.channel;
     const newChannel = newState.channel;
+
     let from = null;
     let to = null;
 
-    console.debug(`[voiceStateUpdate] >>> User ${colours.user}${newState.member?.user?.tag ?? oldState.member?.user?.tag ?? 'unknown'}${colours.reset} changed voice state.`);
+    const userTag = newState.member?.user?.tag ?? oldState.member?.user?.tag ?? 'unknown';
 
+    console.debug(`[voiceStateUpdate] >>> User ${colours.user}${userTag}${colours.reset} changed voice state.`);
+
+    // Ignore stage channels
     if (oldChannel && oldChannel.type === ChannelType.GuildVoice)
     {
         from = oldChannel.name;
@@ -229,36 +268,31 @@ client.on('voiceStateUpdate', async (oldState, newState) =>
         to = newChannel.name;
     }
 
-    if (from)
+    if (from && to)
     {
-        if (to)
-        {
-            // channel swap
-            console.log(`[voiceStateUpdate] >>> User ${colours.user}${newState.member?.user?.tag ?? oldState.member?.user?.tag ?? 'unknown'}${colours.reset} changed voice channel ` +
-                `${colours.channel}${from}${colours.reset} => ${colours.channel}${to}${colours.reset}`);
-        }
-        else
-        {
-            // disconnected
-            console.log(`[voiceStateUpdate] >>> User ${colours.user}${newState.member?.user?.tag ?? oldState.member?.user?.tag ?? 'unknown'}${colours.reset} disconnected from ` +
-                `${colours.channel}${from}${colours.reset}`);
-        }
+        // channel swapped
+        console.log(`[voiceStateUpdate] >>> User ${colours.user}${userTag}${colours.reset} changed voice channel ` +
+            `${colours.channel}${from}${colours.reset} => ${colours.channel}${to}${colours.reset}`);
+    }
+    else if (from)
+    {
+        // disconnected
+        console.log(`[voiceStateUpdate] >>> User ${colours.user}${userTag}${colours.reset} disconnected from ` +
+            `${colours.channel}${from}${colours.reset}`);
+    }
+    else if (to)
+    {
+        // connected
+        console.log(`[voiceStateUpdate] >>> User ${colours.user}${userTag}${colours.reset} connected to ` +
+            `${colours.channel}${to}${colours.reset}`);
     }
     else
     {
-        if (to)
-        {
-            // connected
-            console.log(`[voiceStateUpdate] >>> User ${colours.user}${newState.member?.user?.tag ?? oldState.member?.user?.tag ?? 'unknown'}${colours.reset} connected to ` +
-                `${colours.channel}${to}${colours.reset}`);
-        }
-        else
-        {
-            // probably moving from a stage channel to another stage.  just return
-            console.warn(`[voiceStateUpdate] No 'from' or 'to' for user ${colours.user}${newState.member?.user?.tag ?? oldState.member?.user?.tag ?? 'unknown'}${colours.reset}`);
-            return;
-        }
+        // probably moving from a ChannelType.GuildStageVoice (stage) channel to another.  just return
+        console.warn(`[voiceStateUpdate] No 'from' or 'to' for user ${colours.user}${userTag}${colours.reset}`);
+        return;
     }
+
 
     if (from)
     {
@@ -270,6 +304,7 @@ client.on('voiceStateUpdate', async (oldState, newState) =>
         console.debug(`[voiceStateUpdate] Updating status of new channel: ${colours.channel}${newChannel.name}${colours.reset}`);
         await updateVoiceChannelStatus(newChannel);
     }
+
 });
 
 
@@ -305,6 +340,25 @@ client.on('presenceUpdate', async (oldPresence, newPresence) =>
 });
 
 
+async function listGuilds()
+{
+    console.log(`Currently being used by these servers: `);
+
+    const guilds = await client.guilds.fetch();
+    guilds.forEach(guild =>
+    {
+        console.log(' - ' + guild.name);
+    });
+}
+
+
+client.on('guildCreate', async (guild) =>
+{
+    console.log(`Bot added to a new server: `, guild.name);
+    listGuilds();
+});
+
+
 client.once('clientReady', () =>
 {
     console.log(`--------------------`);
@@ -313,6 +367,7 @@ client.once('clientReady', () =>
     console.log('');
     console.log(`Logged in as ${client.user.tag}`);
     console.log('Bot is ready and listening for events.');
+    setTimeout(listGuilds, 1000);
 });
 
 client.login(AVS_BOT_TOKEN)
