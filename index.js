@@ -169,6 +169,7 @@ function decideChannelStatus(activities, memberCount)
         // counts[game] = 1 where game = "Fortnite", is like setting counts.Fortnite = 1;
         counts[game] = (counts[game] || 0) + 1;
     }
+    console.debug(`counts`, counts);
 
     // Convert the counts object into an array of { game, count } and sort by count desc
     const gameCountsSorted = Object.keys(counts)
@@ -179,6 +180,10 @@ function decideChannelStatus(activities, memberCount)
         })
         .sort((a, b) => (b.count - a.count) || a.game.localeCompare(b.game));
 
+    console.debug(`gameCountsSorted`, gameCountsSorted);
+
+    // TODO: omit the number if everyone in the channel is playing that game?
+    // but if we do, we wont know the difference between 4 out of 5 playing it and all 5
     const status = gameCountsSorted
         .map(game => `${game.name} [${game.numPlayers}]`)
         .join(', ');
