@@ -68,7 +68,7 @@ function getChannelActivities(channel)
     {
         if (member.presence && member.presence.activities)
         {
-            console.debug(`activities set for user ${member.user.tag}:`, member.presence.activities);
+            console.debug(`Activities for user ${member.user.tag}:`, member.presence.activities);
 
             member.presence.activities.forEach(act =>
             {
@@ -97,7 +97,7 @@ function getChannelActivities(channel)
 // Decide channel status string
 function decideChannelStatus(activities, memberCount)
 {
-    console.debug(`[decideChannelStatus] called with memberCount=${memberCount}, activities=${JSON.stringify(activities)}`);
+    //console.debug(`[decideChannelStatus] called with memberCount=${memberCount}, activities=${JSON.stringify(activities)}`);
 
     if (activities.length === 0)
     {
@@ -335,7 +335,7 @@ client.on('presenceUpdate', async (oldPresence, newPresence) =>
     const channel = member.voice?.channel;
     if (channel && channel.type === ChannelType.GuildVoice)
     {
-        console.log(`[presenceUpdate] Update from member ${colours.user}${member.user.tag}${colours.reset} in voice channel ${colours.channel}${channel.name}${colours.reset}`);
+        console.log(`[presenceUpdate] >>> Update from member ${colours.user}${member.user.tag}${colours.reset} in voice channel ${colours.channel}${channel.name}${colours.reset}`);
         await updateVoiceChannelStatus(channel);
     }
     else
@@ -359,7 +359,7 @@ async function listGuilds()
 
 client.on('guildCreate', async (guild) =>
 {
-    console.log(`Bot added to a new server: `, guild.name);
+    console.log(`>>> Bot added to a new server: `, guild.name);
     listGuilds();
 });
 
