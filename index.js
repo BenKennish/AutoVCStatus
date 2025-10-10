@@ -97,7 +97,7 @@ function getChannelActivities(channel)
 // Decide channel status string
 function decideChannelStatus(activities, memberCount)
 {
-    console.debug(`[decideChannelStatus] memberCount=${memberCount}, activities=${JSON.stringify(activities)}`);
+    console.debug(`[decideChannelStatus] called with memberCount=${memberCount}, activities=${JSON.stringify(activities)}`);
 
     if (activities.length === 0)
     {
@@ -171,12 +171,12 @@ function decideChannelStatus(activities, memberCount)
     }
     console.debug(`counts`, counts);
 
-    // Convert the counts object into an array of { game, count } and sort by count desc
+    // Convert the counts object into an array of { "Fornite", 2 } and sort by count desc
     const gameCountsSorted = Object.keys(counts)
         .map((game) =>
         {
             // { game } is a shortcut for { game: game }
-            return { game, count: counts[game] };
+            return { name: game, numPlayers: counts[game] };
         })
         .sort((a, b) => (b.count - a.count) || a.game.localeCompare(b.game));
 
