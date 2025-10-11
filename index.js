@@ -11,17 +11,17 @@ const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
 const { version } = require('./package.json');
 
 // set to false to disable debug messsages
-const DEBUG = true;
+const DEBUG = false;
 
 // Discord's ID for 'playing' activities (i.e. games)
 const ID_GAME = 0;
 
-// The AVS_BOT_TOKEN environment variable needs to contain the Discord bot API key
+// The AVCS_BOT_TOKEN environment variable needs to contain the Discord bot API key
 // You could run this bot like this:
-//     AVS_BOT_TOKEN="your_discord_token_here" node index.js
+//     AVCS_BOT_TOKEN="your_discord_token_here" node index.js
 // Or maybe store it in a (properly protected) file and then run this:
-//   AVS_BOT_TOKEN="$(cat token.secret)" node index.js
-const AVS_BOT_TOKEN = process.env.AVS_BOT_TOKEN;
+//   AVCS_BOT_TOKEN="$(cat token.secret)" node index.js
+const AVCS_BOT_TOKEN = process.env.AVCS_BOT_TOKEN;
 
 
 // ===================================================
@@ -34,9 +34,9 @@ if (!DEBUG)
     console.debug = () => { };
 }
 
-if (!AVS_BOT_TOKEN)
+if (!AVCS_BOT_TOKEN)
 {
-    console.error('Set AVS_BOT_TOKEN environment variable and restart.');
+    console.error('Set AVCS_BOT_TOKEN environment variable and restart.');
     process.exit(1);
 }
 
@@ -215,7 +215,7 @@ async function setChannelStatus(channel, status)
     const res = await fetch(url, {
         method: 'PUT',
         headers: {
-            'Authorization': `Bot ${AVS_BOT_TOKEN}`,
+            'Authorization': `Bot ${AVCS_BOT_TOKEN}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ status: status })
@@ -375,7 +375,7 @@ client.once('clientReady', () =>
     setTimeout(listGuilds, 1000);
 });
 
-client.login(AVS_BOT_TOKEN)
+client.login(AVCS_BOT_TOKEN)
     .catch(err =>
     {
         console.error('Failed to login:', err);
