@@ -179,7 +179,7 @@ function decideChannelStatus(activities, memberCount)
             // { game } is a shortcut for { game: game }
             return { name: game, numPlayers: counts[game] };
         })
-        .sort((a, b) => (b.count - a.count) || a.game.localeCompare(b.game));
+        .sort((gameA, gameB) => (gameB.count - gameA.count) || gameA.name.localeCompare(gameB.name));
 
     console.debug(`gameCountsSorted`, gameCountsSorted);
 
