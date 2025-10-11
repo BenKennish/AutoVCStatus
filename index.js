@@ -127,37 +127,6 @@ function decideChannelStatus(activities, memberCount)
     //   { user: "Christine", game: "Fortnite" }
     // ]
 
-
-    /* ==== OLD WAY
-    //
-    // Count games, using game name as a property (kinda like a Map)
-    const gameCounts = {};
-    activities.forEach(activity =>
-    {
-        gameCounts[activity.game] = (gameCounts[activity.game] || 0) + 1;
-    });
-    console.log(`[decideChannelStatus] gameCounts:`, gameCounts);
-
-    // now we build an array like this
-    // [ { game: "Fortnite", numPlayers: 2 }, { game: "Minecraft", numPlayers: 1 }]
-    const games = [];
-
-    Object.keys(gameCounts).forEach(game =>
-    {
-        games.push({ name: game, numPlayers: gameCounts[game] });
-    });
-
-    // sort in descending order of players
-    games.sort((a, b) => { b.numPlayers - a.numPlayers });
-
-    console.log(`[decideChannelStatus] games:`, games);
-
-    const status = games.map((game) => `${game.name} (${game.numPlayers})`).join(', ');
-    // status will now be in the form of
-    // "Fortnite (2), Minecraft (1)"
-    */
-
-
     // plain object with no prototype so keys can't collide with Object.prototype
     // we'll then be adding properties..
     //   name: game name
@@ -220,24 +189,6 @@ async function setChannelStatus(channel, status)
     {
         console.error(`[setChannelStatus] REST call errored: `, err);
     }
-
-    // this is how we could do it using a raw(ish) REST request
-    // requires these lines at the top
-    //   const { fetch } = require('undici');
-    //   const DISCORD_API_BASE = 'https://discord.com/api/v10';
-    /*
-    const url = `${DISCORD_API_BASE}/channels/${channel.id}/voice-status`;
-    const res = await fetch(url, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bot ${AVCS_BOT_TOKEN}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: status })
-    });
-    console.log(`[setChannelStatus] REST PATCH response status: ${res.status}`);
-    */
-
 }
 
 
@@ -255,7 +206,6 @@ async function updateVoiceChannelStatus(channel)
     if (members.size === 0)
     {
         // Discord automatically clears an empty vc's status
-        //await setChannelStatus(channel, "");
         return;
     }
     const activities = getChannelActivities(channel);
@@ -267,7 +217,7 @@ async function updateVoiceChannelStatus(channel)
 
 async function listGuilds()
 {
-    console.log(`Currently is currently being used by these servers: `);
+    console.log(`Bot is currently being used by these servers: `);
 
     const guilds = await client.guilds.fetch();
     guilds.forEach(guild =>
@@ -326,7 +276,7 @@ client.on('voiceStateUpdate', async (oldState, newState) =>
     }
     else
     {
-        // no 'from' or 'to' so probably moving from a ChannelType.GuildStageVoice (stage) channel to another.  just return
+        // no 'from' or 'to' so probably moving from a GuildStageVoice (stage) channel to a GuildStageVoice.  just return
         console.warn(`[voiceStateUpdate] No 'from' or 'to' for user ${colours.user}${userTag}${colours.reset}`);
         return;
     }

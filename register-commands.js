@@ -1,4 +1,6 @@
 // register-commands.js
+//
+// run once to register the bots slash commands with the Discord API
 
 const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
