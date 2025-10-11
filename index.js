@@ -172,6 +172,7 @@ function decideChannelStatus(activities, memberCount)
     console.debug(`counts`, counts);
 
     // Convert the counts object into an array of { "Fornite", 2 } and sort by count desc
+    // and then sorting by game name as a tie-breaker
     const gameCountsSorted = Object.keys(counts)
         .map((game) =>
         {
@@ -182,8 +183,6 @@ function decideChannelStatus(activities, memberCount)
 
     console.debug(`gameCountsSorted`, gameCountsSorted);
 
-    // TODO: omit the number if everyone in the channel is playing that game?
-    // but if we do, we wont know the difference between 4 out of 5 playing it and all 5
     const status = gameCountsSorted
         .map(game => `${game.name} [${game.numPlayers}]`)
         .join(', ');
@@ -250,7 +249,25 @@ async function updateVoiceChannelStatus(channel)
 }
 
 
+async function listGuilds()
+{
+    console.log(`Currently is currently being used by these servers: `);
+
+    const guilds = await client.guilds.fetch();
+    guilds.forEach(guild =>
+    {
+        console.log(' - ' + guild.name);
+    });
+    console.log('');
+}
+
+
+// ===================================================
+// ===================================================
+
+
 // Listen for voice state updates
+//
 client.on('voiceStateUpdate', async (oldState, newState) =>
 {
     const oldChannel = oldState.channel;
@@ -263,7 +280,7 @@ client.on('voiceStateUpdate', async (oldState, newState) =>
 
     console.debug(`[voiceStateUpdate] >>> User ${colours.user}${userTag}${colours.reset} changed voice state.`);
 
-    // Ignore stage channels
+    // Only consider GuildVoice channels (e.g. ignore Stage)
     if (oldChannel && oldChannel.type === ChannelType.GuildVoice)
     {
         from = oldChannel.name;
@@ -293,7 +310,7 @@ client.on('voiceStateUpdate', async (oldState, newState) =>
     }
     else
     {
-        // probably moving from a ChannelType.GuildStageVoice (stage) channel to another.  just return
+        // no 'from' or 'to' so probably moving from a ChannelType.GuildStageVoice (stage) channel to another.  just return
         console.warn(`[voiceStateUpdate] No 'from' or 'to' for user ${colours.user}${userTag}${colours.reset}`);
         return;
     }
@@ -314,6 +331,7 @@ client.on('voiceStateUpdate', async (oldState, newState) =>
 
 
 // Listen for presence/activity updates
+//
 client.on('presenceUpdate', async (oldPresence, newPresence) =>
 {
     if (!newPresence || !newPresence.member)
@@ -329,13 +347,13 @@ client.on('presenceUpdate', async (oldPresence, newPresence) =>
         return;
     }
 
-    console.debug(`[presenceUpdate] >>> Member ${colours.user}${member.user.tag}${colours.reset} has updated presence.`);
+    console.debug(`[presenceUpdate] >>> Presence update from member ${colours.user}${member.user.tag}${colours.reset}.`);
 
     // Check if member is in a voice channel
     const channel = member.voice?.channel;
     if (channel && channel.type === ChannelType.GuildVoice)
     {
-        console.log(`[presenceUpdate] >>> Update from member ${colours.user}${member.user.tag}${colours.reset} in voice channel ${colours.channel}${channel.name}${colours.reset}`);
+        console.log(`[presenceUpdate] >>> Presence update from member ${colours.user}${member.user.tag}${colours.reset} in voice channel ${colours.channel}${channel.name}${colours.reset}`);
         await updateVoiceChannelStatus(channel);
     }
     else
@@ -345,21 +363,50 @@ client.on('presenceUpdate', async (oldPresence, newPresence) =>
 });
 
 
-async function listGuilds()
+
+// Listen for slash commands (and other interactions)
+//
+client.on('interactionCreate', async interaction =>
 {
-    console.log(`Currently being used by these servers: `);
-
-    const guilds = await client.guilds.fetch();
-    guilds.forEach(guild =>
+    if (!interaction.isChatInputCommand()) return;
+    if (interaction.commandName !== 'avcs')
     {
-        console.log(' - ' + guild.name);
-    });
-}
+        console.warn(`Received an unrecognised command`, interaction.commandName);
+        return;
+    }
 
+    const sub = interaction.options.getSubcommand();
+
+    switch (sub)
+    {
+        case 'version':
+
+            await interaction.reply({
+                content: `AutoVCStatus v${version} at your service`,
+                flags: MessageFlags.Ephemeral // private reply
+            });
+
+            break;
+        case 'hello':
+
+            await interaction.reply({
+                content: `Hello everyone!  I'm AutoVCStatus, a bot made by Bennish that automatically sets voice channel status messages depending on the game activity of the users on the channel.`
+            });
+
+            break;
+        default:
+
+            await interaction.reply({
+                content: `Unrecognised subcommand: ${sub}`,
+                flags: MessageFlags.Ephemeral // private reply
+            });
+    }
+
+});
 
 client.on('guildCreate', async (guild) =>
 {
-    console.log(`>>> Bot joined server: `, guild.name);
+    console.log(`>>> Bot joined new server: `, guild.name);
     await listGuilds();
 });
 
@@ -372,6 +419,7 @@ client.once('clientReady', () =>
     console.log('');
     console.log(`Logged in as ${client.user.tag}`);
     console.log('Bot is ready and listening for events.');
+    console.log('');
     setTimeout(listGuilds, 1000);
 });
 
