@@ -24,6 +24,14 @@ const ID_GAME = 0;
 const AVCS_BOT_TOKEN = process.env.AVCS_BOT_TOKEN;
 
 
+// these will become per-server config
+//
+// show player counts of the games in brackets?
+const showPlayerCounts = false;
+
+// show all games that are being played (rather than just the one with the most players)
+const showAllGames = false;
+
 // ===================================================
 // ===================================================
 
@@ -173,7 +181,7 @@ function decideChannelStatus(activities, memberCount)
 
     // Convert the counts object into an array of { "Fornite", 2 } and sort by count desc
     // and then sorting by game name as a tie-breaker
-    const gameCountsSorted = Object.keys(counts)
+    let gameCountsSorted = Object.keys(counts)
         .map((game) =>
         {
             // { game } is a shortcut for { game: game }
@@ -183,8 +191,16 @@ function decideChannelStatus(activities, memberCount)
 
     console.debug(`gameCountsSorted`, gameCountsSorted);
 
+    if (!showAllGames)
+    {
+        // recreate gameCountsSorted with only the first element
+        gameCountsSorted = [gameCountsSorted[0]];
+    }
+
     const status = gameCountsSorted
-        .map(game => `${game.name} [${game.numPlayers}]`)
+        .map(
+            game => showPlayerCounts ? `${game.name} (${game.numPlayers})` : game.name
+        )
         .join(', ');
 
     console.log(`[decideChannelStatus] Status: ${status}`);
