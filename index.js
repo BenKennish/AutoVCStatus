@@ -359,8 +359,8 @@ async function listGuilds()
 
 client.on('guildCreate', async (guild) =>
 {
-    console.log(`>>> Bot added to a new server: `, guild.name);
-    listGuilds();
+    console.log(`>>> Bot joined server: `, guild.name);
+    await listGuilds();
 });
 
 
