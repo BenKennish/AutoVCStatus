@@ -370,9 +370,17 @@ client.on('interactionCreate', async interaction =>
 
 });
 
+
 client.on('guildCreate', async (guild) =>
 {
     console.log(`>>> Bot joined new server:`, guild.name);
+    await listGuilds();
+});
+
+
+client.on('guildDelete', async (guild) =>
+{
+    console.log(`>>> Bot left server:`, guild.name);
     await listGuilds();
 });
 

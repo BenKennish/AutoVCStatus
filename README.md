@@ -47,6 +47,6 @@ you'll need to either self-host it or ask me nicely for a link to add it to your
 - `npm install`
 - `AVCS_BOT_TOKEN="XXXxxXX0XX.XXx.XXxx0xx0XXx" AVCS_APP_ID="1234567890" node register-commands.js`
 - `AVCS_BOT_TOKEN="XXXxxXX0XX.XXx.XXxx0xx0XXx" node index.js`
--
+
 _(replacting the strings with the actual bot secret token / application ID)_
 
