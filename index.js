@@ -372,7 +372,7 @@ client.on('interactionCreate', async interaction =>
 
 client.on('guildCreate', async (guild) =>
 {
-    console.log(`>>> Bot joined new server: `, guild.name);
+    console.log(`>>> Bot joined new server:`, guild.name);
     await listGuilds();
 });
 
