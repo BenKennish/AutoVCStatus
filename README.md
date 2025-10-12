@@ -7,10 +7,10 @@ on a server according to the game activity of the channel members.
 
 If there are 4 members of a voice channel "Alpha" as follows:
 
-- Alice playing "Fortnite"
-- Bob playing "Minecraft"
-- Charlie playing "Fortnite"
-- Dylan not playing any game
+- Alice is playing "Fortnite"
+- Bob is playing "Minecraft"
+- Charlie is playing "Fortnite"
+- Dylan isn't playing any game
 
 The bot may set the channel status for "Alpha" to one of the following, depending upon configuration:
 
