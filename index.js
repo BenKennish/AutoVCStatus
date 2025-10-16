@@ -6,7 +6,7 @@
 // server according to the game activity of the channel members
 //
 
-const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, MessageFlags } = require('discord.js');
 
 const { version } = require('./package.json');
 
@@ -27,10 +27,10 @@ const AVCS_BOT_TOKEN = process.env.AVCS_BOT_TOKEN;
 // these will become per-server config
 //
 // show player counts of the games in brackets?
-const showPlayerCounts = false;
+const showPlayerCounts = true;
 
 // show all games that are being played (rather than just the one with the most players)
-const showAllGames = false;
+const showAllGames = true;
 
 // ===================================================
 // ===================================================
