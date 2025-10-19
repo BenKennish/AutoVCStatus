@@ -78,17 +78,21 @@ function getChannelActivities(channel)
         {
             console.debug(`Activities for user ${member.user.tag}:`, member.presence.activities);
 
-            member.presence.activities.forEach(act =>
+            member.presence.activities.forEach(activity =>
             {
-                if (act.type === ID_GAME && act.name)
+                if (activity.type === ID_GAME && activity.name)
                 {
                     // type 0 (ID_GAME): "Playing" activities (i.e. games)
                     // type 2: "Listening to" activities (Music)
+
+                    // strip '®' etc from game names e.g. 'Rocket League®'
+                    const gameName = activity.name.replace(/[®©™]+$/, "");
+
                     activities.push({
                         user: member.user,
-                        game: act.name
+                        game: gameName
                     });
-                    console.log(`[getChannelActivities] Member ${colours.user}${member.user.tag}${colours.reset} is playing ${colours.activity}${act.name}${colours.reset}`);
+                    console.log(`[getChannelActivities] Member ${colours.user}${member.user.tag}${colours.reset} is playing ${colours.activity}${activity.name}${colours.reset}`);
                 }
             });
         }
