@@ -210,12 +210,19 @@ async function updateVoiceChannelStatus(channel)
     if (members.size === 0)
     {
         // Discord automatically clears an empty vc's status
-        return;
+        // but let's do it anyway as sometimes there's a race condition
+        // between this script and Discord's process to clear the channel status
+        console.log(`[updateVoiceChannelStatus] Clearing status for ${colours.channel}${channel?.name ?? 'unknown'}${colours.reset}`);
+        await setChannelStatus(channel, '');
     }
-    const activities = getChannelActivities(channel);
-    const status = decideChannelStatus(activities, members.size);
-    console.log(`[updateVoiceChannelStatus] Setting status for ${colours.channel}${channel?.name ?? 'unknown'}${colours.reset} to "${colours.activity}${status}${colours.reset}"`);
-    await setChannelStatus(channel, status);
+    else
+    {
+        const activities = getChannelActivities(channel);
+        const status = decideChannelStatus(activities, members.size);
+
+        console.log(`[updateVoiceChannelStatus] Setting status for ${colours.channel}${channel?.name ?? 'unknown'}${colours.reset} to "${colours.activity}${status}${colours.reset}"`);
+        await setChannelStatus(channel, status);
+    }
 }
 
 

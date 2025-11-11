@@ -15,8 +15,8 @@ If there are 4 members of a voice channel "Alpha" as follows:
 The bot may set the channel status for "Alpha" to one of the following, depending upon configuration:
 
 - "Fortnite (2), Minecraft (1)"
-- "Fornite, Minecraft"
 - "Fortnite (2)"
+- "Fortnite, Minecraft"
 - "Fortnite"
 
 ## Required Scopes
