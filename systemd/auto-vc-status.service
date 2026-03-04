@@ -1,0 +1,27 @@
+[Unit]
+Description=AutoVCStatus
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=ben
+Group=ben
+
+WorkingDirectory=/opt/auto-vc-status
+
+EnvironmentFile=/opt/auto-vc-status/avcs.env
+
+#ExecStart=/bin/bash /home/ben/src/AutoVCStatus/run.sh
+ExecStart=/usr/bin/node /opt/auto-vc-status/index.js
+
+Restart=on-failure
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

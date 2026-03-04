@@ -330,6 +330,8 @@ client.on('presenceUpdate', async (oldPresence, newPresence) =>
     const channel = member.voice?.channel;
     if (channel && channel.type === ChannelType.GuildVoice)
     {
+        // TODO: check if the presence update involved a change of activity and return otherwise
+
         console.log(`[presenceUpdate] >>> Presence update from member ${colours.user}${member.user.tag}${colours.reset} in voice channel ${colours.channel}${channel.name}${colours.reset}`);
         await updateVoiceChannelStatus(channel);
     }
