@@ -1,6 +1,6 @@
 {
   "name": "auto-vc-status",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Automatically sets the status of Discord voice channels according to the game activity of the channel members",
   "author": "Ben Kennish <ben@kennish.net> (https://www.bennish.net)",
   "main": "index.js",

@@ -6,15 +6,13 @@
 // server according to the game activity of the channel members
 //
 
-const { Client, GatewayIntentBits, ChannelType, MessageFlags } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, MessageFlags, ActivityType } = require('discord.js');
 
 const { version } = require('./package.json');
 
 // set to false to disable debug messsages
 const DEBUG = false;
 
-// Discord's ID for 'playing' activities (i.e. games)
-const ID_GAME = 0;
 
 // The AVCS_BOT_TOKEN environment variable needs to contain the Discord bot API key
 // You could run this bot like this:
@@ -24,7 +22,7 @@ const ID_GAME = 0;
 const AVCS_BOT_TOKEN = process.env.AVCS_BOT_TOKEN;
 
 
-// these will become per-server config
+// these should probably be per-server config
 //
 // show player counts of the games in brackets?
 const showPlayerCounts = true;
@@ -36,7 +34,7 @@ const showAllGames = true;
 // ===================================================
 
 
-// Suppress all console.debug output (comment out )
+// Suppress all console.debug output by redefining the method
 if (!DEBUG)
 {
     console.debug = () => { };
@@ -57,7 +55,7 @@ const client = new Client({
     ]
 });
 
-// used for pretty console output
+// define some colour codes to use for pretty console output
 const colours = {
     user: "\x1b[31m",     // red
     activity: "\x1b[32m", // green
@@ -80,10 +78,14 @@ function getChannelActivities(channel)
 
             member.presence.activities.forEach(activity =>
             {
-                if (activity.type === ID_GAME && activity.name)
+                if (activity.type === ActivityType.Playing && activity.name)
                 {
-                    // type 0 (ID_GAME): "Playing" activities (i.e. games)
-                    // type 2: "Listening to" activities (Music)
+                    // ActivityType.Playing activities (i.e. games)
+                    // ActivityType.Streaming (Discord streams?) 
+	            // ActivityType.Listening (e.g. Spotify)
+		    // ActivityType.Watching
+		    // ActivityType.Custom
+		    // ActivityType.Competing
 
                     // strip '®' etc from game names e.g. 'Rocket League®'
                     const gameName = activity.name.replace(/[®©™]+$/, "");
@@ -186,6 +188,7 @@ async function setChannelStatus(channel, status)
 {
     try
     {
+	// no API native method to do this so we do a raw PUT request
         const res = await client.rest.put(`/channels/${channel.id}/voice-status`, { body: { status: status } });
         console.debug(`[setChannelStatus] REST call returned: `, res);
     }
@@ -324,16 +327,26 @@ client.on('presenceUpdate', async (oldPresence, newPresence) =>
         return;
     }
 
-    console.debug(`[presenceUpdate] >>> Presence update from member ${colours.user}${member.user.tag}${colours.reset}.`);
 
     // Check if member is in a voice channel
     const channel = member.voice?.channel;
     if (channel && channel.type === ChannelType.GuildVoice)
     {
-        // TODO: check if the presence update involved a change of activity and return otherwise
+        console.debug(`[presenceUpdate] >>> Presence update from member in vc ${colours.user}${member.user.tag}${colours.reset}.`, newPresence);
 
-        console.log(`[presenceUpdate] >>> Presence update from member ${colours.user}${member.user.tag}${colours.reset} in voice channel ${colours.channel}${channel.name}${colours.reset}`);
-        await updateVoiceChannelStatus(channel);
+	const oldPlayingActivity = oldPresence.activities?.find(
+		(activity) => activity.type === ActivityType.Playing
+	);
+
+	const newPlayingActivity = newPresence.activities?.find(
+		(activity) => activity.type === ActivityType.Playing
+	);
+
+	if (newPlayingActivity?.name !== oldPlayingActivity?.name)
+	{
+            console.log(`[presenceUpdate] >>> Playing activity name change from member ${colours.user}${member.user.tag}${colours.reset} in vc ${colours.channel}${channel.name}${colours.reset} ${colours.activity}${oldPlayingActivity?.name} => ${newPlayingActivity?.name}`);
+            await updateVoiceChannelStatus(channel);
+        }
     }
     else
     {
